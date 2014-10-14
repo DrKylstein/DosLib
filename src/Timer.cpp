@@ -9,14 +9,14 @@
 using std::uint_fast64_t;
 using std::uint16_t;
 
-static Timer::interrupt_ptr Timer::_prev_int_8 = 0;
+static interrupts::isr_ptr Timer::_prev_int_8 = 0;
 static void (__far* Timer::_task)() = 0;
 static volatile Timer::tics_t Timer::_count = 0;
 static volatile Timer::tics_t Timer::_lastBiosCount = 0;
 static unsigned int Timer::_biosStep = 1;
 
 Timer::Timer(int hz): _nextCount(0) {
-    atomic lock;
+    interrupts::atomic lock;
     _hz = hz;
     _prev_int_8 = _dos_getvect(8);
     _dos_setvect(8, _timer_int);
@@ -28,7 +28,7 @@ Timer::Timer(int hz): _nextCount(0) {
     outp(0x40, divisor >> 8);
 }
 Timer::~Timer() {
-    atomic lock;
+    interrupts::atomic lock;
     //reset interval, 0x0000 = 0x10000
     outp(0x43, 0x36);
     outp(0x40, 0);
@@ -51,7 +51,7 @@ static void __interrupt __far Timer::_timer_int() {
 void Timer::throttle(int fps) {
     tics_t newCount;
     do {
-        atomic lock;
+        interrupts::atomic lock;
         newCount = _count;
     } while(newCount < _nextCount);
     
@@ -59,6 +59,7 @@ void Timer::throttle(int fps) {
     _nextCount = newCount + period;
 }
 void Timer::setTask(void (__far* task)()) {
+    interrupts::atomic lock;
     _task = task;
 }
 
@@ -66,6 +67,6 @@ unsigned int Timer::second() {
     return _hz;
 }
 Timer::tics_t Timer::getTics() {
-    atomic lock;
+    interrupts::atomic lock;
     return _count;
 }

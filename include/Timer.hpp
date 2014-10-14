@@ -2,6 +2,7 @@
 #define TIMER_HPP
 
 #include <cstdint>
+#include "interrupts.hpp"
 class Timer {
     public:
         typedef std::uint_fast64_t tics_t;   
@@ -13,23 +14,8 @@ class Timer {
         tics_t getTics();       
         unsigned int second();
         
-    private:
-        class atomic {
-            public:
-                inline atomic() {
-                    _asm {
-                        cli
-                    }
-                }
-                inline ~atomic() {
-                    _asm {
-                        sti
-                    }
-                }
-        };
-        typedef void (__interrupt __far *interrupt_ptr)();
-        
-        static interrupt_ptr _prev_int_8;
+    private:        
+        static interrupts::isr_ptr _prev_int_8;
         static void __interrupt __far _timer_int();
         static void (__far* _task)();
         static volatile tics_t _count;
